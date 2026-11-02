@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#176b50">
+<title>Tracker Khatam Al-Quran</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f8f5;color:#18352b}
+header{background:#176b50;color:white;padding:25px 15px;text-align:center}
+h1{margin:0 0 8px}
+main{max-width:720px;margin:18px auto;padding:0 14px}
+.panel{background:white;border-radius:18px;padding:18px;margin-bottom:15px;box-shadow:0 3px 14px #163b2b12}
+.progress{height:14px;background:#e5eee8;border-radius:20px;overflow:hidden;margin:12px 0}
+#bar{height:100%;width:0;background:#26a269}
+.stats{display:flex;justify-content:space-between;font-size:14px}
+.big{font-size:30px;font-weight:bold;color:#176b50}
+.pages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:15px}
+.page{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px 2px;border:1px solid #dce8df;border-radius:10px;background:white}
+.page.done{background:#e5f5eb;color:#176b50;font-weight:bold}
+.page input{accent-color:#176b50;margin:0;width:16px;height:16px}
+input,button{font-size:15px;padding:11px;border-radius:10px;border:1px solid #d6e3da}
+button{background:#176b50;color:white;border:0;font-weight:bold}
+@media(min-width:560px){.pages{grid-template-columns:repeat(8,1fr)}}
+.note{font-size:13px;color:#65766c;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header>
+<h1>📖 Tracker Khatam Al-Quran</h1>
+<p>Langkah demi langkah menuju khatam</p>
+</header>
+
+<main>
+<section class="panel">
+<div class="stats">
+<span>Progress bacaan</span>
+<strong id="percent">0%</strong>
+</div>
+<div class="progress"><div id="bar"></div></div>
+<div class="stats">
+<span><strong id="count">0</strong> / 604 muka surat</span>
+<span>Baki: <strong id="remaining">604</strong></span>
+</div>
+<div class="big" id="pagesDone">0 muka surat</div>
+<p class="note">Tandakan ✓ selepas selesai membaca setiap muka surat. Progress disimpan secara automatik.</p>
+</section>
+
+<section class="panel">
+<h3>Cari muka surat</h3>
+<input id="search" type="number" min="1" max="604" placeholder="Nombor 1–604">
+<button onclick="findPage()">Cari</button>
+<p class="note" id="message">Mushaf standard 604 muka surat.</p>
+</section>
+
+<section class="panel">
+<h3>Senarai muka surat</h3>
+<button onclick="resetProgress()">Reset progress</button>
+<div class="pages" id="pages"></div>
+</section>
+
+<p class="note" style="text-align:center">
+Semoga dipermudahkan untuk khatam Al-Quran 🤲
+</p>
+</main>
+
+<script>
+const TOTAL=604;
+const KEY="quranKhatamProgress_v1";
+let done=new Set();
+
+try {
+ done=new Set(JSON.parse(localStorage.getItem(KEY)||"[]"));
+} catch(e) {
+ done=new Set();
+}
+
+const pages=document.getElementById("pages");
+
+function save(){
+ localStorage.setItem(KEY,JSON.stringify([...done]));
+ update();
+}
+
+function update(){
+ const n=done.size;
+ const pct=Math.round(n/TOTAL*100);
+
+ document.getElementById("count").textContent=n;
+ document.getElementById("remaining").textContent=TOTAL-n;
+ document.getElementById("percent").textContent=pct+"%";
+ document.getElementById("bar").style.width=pct+"%";
+ document.getElementById("pagesDone").textContent=n+" muka surat selesai";
+
+ pages.querySelectorAll(".page").forEach(el=>{
+  const checked=done.has(Number(el.dataset.page));
+  el.classList.toggle("done",checked);
+  el.querySelector("input").checked=checked;
+ });
+}
+
+function render(){
+ for(let i=1;i<=TOTAL;i++){
+  const label=document.createElement("label");
+  label.className="page";
+  label.dataset.page=i;
+
+  const cb=document.createElement("input");
+  cb.type="checkbox";
+  cb.addEventListener("change",()=>{
+   cb.checked?done.add(i):done.delete(i);
+   save();
+  });
+
+  const span=document.createElement("span");
+  span.textContent=i;
+
+  label.append(cb,span);
+  pages.append(label);
+ }
+ update();
+}
+
+function findPage(){
+ const v=Number(document.getElementById("search").value);
+ const msg=document.getElementById("message");
+
+ if(!Number.isInteger(v)||v<1||v>TOTAL){
+  msg.textContent="Masukkan nombor 1 hingga 604.";
+  return;
+ }
+
+ const el=pages.querySelector(`[data-page="${v}"]`);
+ el.scrollIntoView({behavior:"smooth",block:"center"});
+ msg.textContent="Muka surat "+v+(done.has(v)?" sudah selesai.":" belum selesai.");
+}
+
+function resetProgress(){
+ if(confirm("Padam semua progress?")){
+  done.clear();
+  save();
+ }
+}
+
+render();
+</script>
+</body>
+</html>
